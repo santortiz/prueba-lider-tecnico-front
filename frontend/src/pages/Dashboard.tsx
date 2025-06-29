@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "../services/api";
+import { Circle, Check, AlertCircle } from "lucide-react";
 
 type Table = {
   id: number;
@@ -24,7 +25,7 @@ export default function Dashboard() {
   const changeTableStatus = async (id: number, action: "occupy" | "free") => {
     try {
       await axios.post(`/tables/tables/${id}/${action}`);
-      fetchTables(); // refresca el estado después del cambio
+      fetchTables();
     } catch {
       setError("Error al cambiar el estado de la mesa.");
     }
@@ -34,52 +35,61 @@ export default function Dashboard() {
     fetchTables();
   }, []);
 
+  const getStatusLabel = (status: Table["status"]) => {
+    switch (status) {
+      case "free":
+        return { text: "Libre", color: "text-green-600", icon: <Circle size={18} /> };
+      case "reserved":
+        return { text: "Reservada", color: "text-yellow-600", icon: <AlertCircle size={18} /> };
+      case "occupied":
+        return { text: "Ocupada", color: "text-red-600", icon: <Check size={18} /> };
+    }
+  };
+
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-      <h1 className="text-2xl font-bold mb-4">Dashboard del Mesero</h1>
-      {error && <p className="text-red-500 mb-4">{error}</p>}
+    <div className="max-w-7xl mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6 text-blue-700">Dashboard del Mesero</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {tables.map((table) => (
-          <div key={table.id} className="bg-white p-4 shadow rounded">
-            <h2 className="font-bold text-lg">{table.name}</h2>
-            <p>Capacidad: {table.capacity}</p>
-            <p>
-              Estado:{" "}
-              <span
-                className={`font-semibold ${
-                  table.status === "free"
-                    ? "text-green-600"
-                    : table.status === "reserved"
-                    ? "text-yellow-600"
-                    : "text-red-600"
-                }`}
-              >
-                {table.status.toUpperCase()}
-              </span>
-            </p>
+      {error && (
+        <div className="text-red-600 bg-red-100 p-3 rounded mb-4 border border-red-200">
+          {error}
+        </div>
+      )}
 
-            <div className="mt-4 flex gap-2">
-              {table.status === "free" && (
-                <button
-                  onClick={() => changeTableStatus(table.id, "occupy")}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Walk-in
-                </button>
-              )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {tables.map((table) => {
+          const status = getStatusLabel(table.status);
+          return (
+            <div key={table.id} className="bg-white shadow rounded p-4 border border-gray-200">
+              <h2 className="text-lg font-bold mb-2">{table.name}</h2>
+              <p className="text-sm text-gray-600 mb-1">Capacidad: {table.capacity}</p>
+              <p className={`flex items-center gap-2 font-medium ${status.color}`}>
+                {status.icon}
+                {status.text}
+              </p>
 
-              {table.status === "occupied" && (
-                <button
-                  onClick={() => changeTableStatus(table.id, "free")}
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                >
-                  Finalizar
-                </button>
-              )}
+              <div className="mt-4 flex gap-2">
+                {table.status === "free" && (
+                  <button
+                    onClick={() => changeTableStatus(table.id, "occupy")}
+                    className="w-full bg-blue-600 text-white py-1 rounded hover:bg-blue-700 transition"
+                  >
+                    Walk-in
+                  </button>
+                )}
+
+                {table.status === "occupied" && (
+                  <button
+                    onClick={() => changeTableStatus(table.id, "free")}
+                    className="w-full bg-green-600 text-white py-1 rounded hover:bg-green-700 transition"
+                  >
+                    Finalizar
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
